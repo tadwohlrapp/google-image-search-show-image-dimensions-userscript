@@ -17,7 +17,7 @@
 // @copyright       2020, Taddiboy (https://openuserjs.org/users/Taddiboy)
 // @license         MIT
 // @author          Taddiboy
-// @version         1.1.0
+// @version         1.2.0
 // @icon            https://i.imgur.com/7OeXVaf.png
 // @include         https://*.google.tld/*tbm=isch*
 // @grant           GM_addStyle
@@ -28,27 +28,24 @@
 
   // Add Google's own CSS used for image dimensions
   GM_addStyle(`
-  .img-dims {
+  .img-dims p {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin: 0;
+    padding: 4px;
+    color: #f1f3f4;
     background-color: rgba(0,0,0,.5);
     border-radius: 2px 0 0 0;
-    bottom: 0;
-    box-shadow: 0 0 1px 0 rgba(0,0,0,.16);
-    box-sizing: border-box;
-    color: #f1f3f4;
-    font-family: Roboto-Medium,Roboto,arial,sans-serif;
+    font-family: Roboto-Medium,Roboto,Arial,sans-serif;
     font-size: 10px;
-    right: 0;
     line-height: 12px;
-    overflow: hidden;
-    padding: 4px;
-    position: absolute;
-    white-space: nowrap;
   }
   `);
 
   function showDims() {
     // Find all thumbnails & exclude the "already handled" class we set below
-    const images = document.querySelectorAll('[data-ow]:not(.img-dims-added)');
+    const images = document.querySelectorAll('[data-ow]:not(.img-dims)');
 
     // Loop through all thumbnails
     for (let i = 0; i < images.length; i++) {
@@ -60,19 +57,16 @@
       // Get original height from 'data-oh' attribute
       const height = image.getAttribute('data-oh');
 
-      // Create DIV and insert text
-      const dimensionsDiv = document.createElement("div");
+      // Create P Tag and insert text
+      const dimensionsDiv = document.createElement("p");
       const dimensionsContent = document.createTextNode(width + " × " + height);
       dimensionsDiv.appendChild(dimensionsContent);
-
-      // Assign CSS class
-      dimensionsDiv.classList.add("img-dims");
 
       // Append everything to thumbnail
       image.firstChild.appendChild(dimensionsDiv);
 
-      // Add "already handled" type of class to the thumbnail
-      image.classList.add("img-dims-added");
+      // Add CSS class to the thumbnail
+      image.classList.add("img-dims");
     }
   }
 
