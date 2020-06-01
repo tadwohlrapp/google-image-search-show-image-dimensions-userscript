@@ -17,31 +17,31 @@
 // @copyright       2020, Taddiboy (https://openuserjs.org/users/Taddiboy)
 // @license         MIT
 // @author          Taddiboy
-// @version         1.2.0
+// @version         1.3.0
+// @inject-into			content
 // @icon            https://i.imgur.com/7OeXVaf.png
 // @include         https://*.google.tld/*tbm=isch*
-// @grant           GM_addStyle
 // ==/UserScript==
 
 (function () {
   'use strict';
 
   // Add Google's own CSS used for image dimensions
-  GM_addStyle(`
-  .img-dims p {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    margin: 0;
-    padding: 4px;
-    color: #f1f3f4;
-    background-color: rgba(0,0,0,.5);
-    border-radius: 2px 0 0 0;
-    font-family: Roboto-Medium,Roboto,Arial,sans-serif;
-    font-size: 10px;
-    line-height: 12px;
-  }
-  `);
+  addGlobalStyle(`
+    .img-dims p {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+      padding: 4px;
+      color: #f1f3f4;
+      background-color: rgba(0,0,0,.5);
+      border-radius: 2px 0 0 0;
+      font-family: Roboto-Medium,Roboto,Arial,sans-serif;
+      font-size: 10px;
+      line-height: 12px;
+    }
+    `);
 
   function showDims() {
     // Find all thumbnails & exclude the "already handled" class we set below
@@ -77,8 +77,16 @@
   const mutationObserver = new MutationObserver(showDims);
 
   // Let MutationObserver target the grid containing all thumbnails
-  const targetNode = document.querySelector('div[data-id="GRID_STATE0"]');
+  const targetNode = document.querySelector('div[data-cid="GRID_STATE0"]');
 
   // Run MutationObserver
-  mutationObserver.observe(targetNode, {childList: true,subtree: true});
+  mutationObserver.observe(targetNode, { childList: true, subtree: true });
+
+  function addGlobalStyle(css) {
+    const head = document.getElementsByTagName('head')[0];
+    if (!head) { return; }
+    const style = document.createElement('style');
+    style.innerHTML = css;
+    head.appendChild(style);
+  }
 })();
