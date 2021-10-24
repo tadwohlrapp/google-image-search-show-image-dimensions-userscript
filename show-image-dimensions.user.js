@@ -14,11 +14,11 @@
 // @description:it  Visualizza le dimensioni dell'immagine (ad es. "1920 × 1080") per ogni miniatura nella pagina dei risultati della ricerca immagini di Google.
 // @description:pl  Wyświetla wymiary obrazu (np. "1920 × 1080") dla każdej miniaturki na stronie wyników wyszukiwania obrazów Google.
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
-// @copyright       2020, Taddiboy (https://openuserjs.org/users/Taddiboy)
+// @copyright       2021, Taddiboy (https://openuserjs.org/users/Taddiboy)
 // @license         MIT
 // @author          Taddiboy
-// @version         1.3.0
-// @inject-into			content
+// @version         1.3.1
+// @inject-into     content
 // @icon            https://i.imgur.com/7OeXVaf.png
 // @include         https://*.google.tld/*tbm=isch*
 // ==/UserScript==
@@ -86,7 +86,7 @@
     const head = document.getElementsByTagName('head')[0];
     if (!head) { return; }
     const style = document.createElement('style');
-    style.innerHTML = css;
+    style.textContent = css;
     head.appendChild(style);
   }
 })();
