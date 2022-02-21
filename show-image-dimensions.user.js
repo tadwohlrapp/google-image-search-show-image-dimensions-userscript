@@ -15,7 +15,7 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.3.2
+// @version         1.3.3
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
@@ -25,8 +25,8 @@
 // @icon64          https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon64.png
 // @inject-into     content
 // @include         https://*.google.tld/*tbm=isch*
-// @compatible      firefox Tested on Firefox v90 with Violentmonkey v2.13.0, Tampermonkey v4.13 and Greasemonkey v4.11
-// @compatible      chrome Tested on Chrome v94  with Violentmonkey v2.13.0 and Tampermonkey v4.13
+// @compatible      firefox Tested on Firefox v97 with Violentmonkey v2.13.0, Tampermonkey v4.13 and Greasemonkey v4.11
+// @compatible      chrome Tested on Chrome v98 with Violentmonkey v2.13.0 and Tampermonkey v4.14
 // ==/UserScript==
 
 (function () {
@@ -69,7 +69,7 @@
       dimensionsDiv.appendChild(dimensionsContent);
 
       // Append everything to thumbnail
-      image.firstChild.appendChild(dimensionsDiv);
+      image.children[1].appendChild(dimensionsDiv);
 
       // Add CSS class to the thumbnail
       image.classList.add("img-dims");
