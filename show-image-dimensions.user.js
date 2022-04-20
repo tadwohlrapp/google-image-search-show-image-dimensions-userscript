@@ -15,18 +15,18 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.3.3
+// @version         1.3.4
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
-// @updateURL       https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/show-image-dimensions.meta.js
-// @downloadURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/show-image-dimensions.user.js
+// @updateURL       https://greasyfork.org/scripts/401432/code/google-image-search-show-image-dimensions.meta.js
+// @downloadURL     https://greasyfork.org/scripts/401432/code/google-image-search-show-image-dimensions.user.js
 // @icon            https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon.png
 // @icon64          https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon64.png
 // @inject-into     content
 // @include         https://*.google.tld/*tbm=isch*
-// @compatible      firefox Tested on Firefox v97 with Violentmonkey v2.13.0, Tampermonkey v4.13 and Greasemonkey v4.11
-// @compatible      chrome Tested on Chrome v98 with Violentmonkey v2.13.0 and Tampermonkey v4.14
+// @compatible      firefox Tested on Firefox v99 with Violentmonkey v2.13.0, Tampermonkey v4.16 and Greasemonkey v4.11
+// @compatible      chrome Tested on Chrome v100 with Violentmonkey v2.13.0 and Tampermonkey v4.16
 // ==/UserScript==
 
 (function () {
@@ -51,29 +51,32 @@
 
   function showDims() {
     // Find all thumbnails & exclude the "already handled" class we set below
-    const images = document.querySelectorAll('[data-ow]:not(.img-dims)');
+    const images = document.querySelectorAll('[data-ow]:not(.img-dims):not([data-ismultirow])');
 
     // Loop through all thumbnails
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
+    images.forEach((image) => {
+      try {
+        // Get original width from 'data-ow' attribute
+        const width = image.getAttribute('data-ow');
 
-      // Get original width from 'data-ow' attribute
-      const width = image.getAttribute('data-ow');
+        // Get original height from 'data-oh' attribute
+        const height = image.getAttribute('data-oh');
 
-      // Get original height from 'data-oh' attribute
-      const height = image.getAttribute('data-oh');
+        // Create p tag and insert text
+        const dimensionsDiv = document.createElement('p');
+        const dimensionsContent = document.createTextNode(width + ' × ' + height);
+        dimensionsDiv.appendChild(dimensionsContent);
 
-      // Create P Tag and insert text
-      const dimensionsDiv = document.createElement("p");
-      const dimensionsContent = document.createTextNode(width + " × " + height);
-      dimensionsDiv.appendChild(dimensionsContent);
+        // Append everything to thumbnail
+        image.children[1].appendChild(dimensionsDiv);
 
-      // Append everything to thumbnail
-      image.children[1].appendChild(dimensionsDiv);
+        // Add CSS class to the thumbnail
+        image.classList.add('img-dims');
 
-      // Add CSS class to the thumbnail
-      image.classList.add("img-dims");
-    }
+      } catch (error) {
+        console.error(error);
+      }
+    });
   }
 
   // Run script once on document ready

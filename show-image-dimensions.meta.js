@@ -15,16 +15,16 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.3.3
+// @version         1.3.4
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
-// @updateURL       https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/show-image-dimensions.meta.js
-// @downloadURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/show-image-dimensions.user.js
+// @updateURL       https://greasyfork.org/scripts/401432/code/google-image-search-show-image-dimensions.meta.js
+// @downloadURL     https://greasyfork.org/scripts/401432/code/google-image-search-show-image-dimensions.user.js
 // @icon            https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon.png
 // @icon64          https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon64.png
 // @inject-into     content
 // @include         https://*.google.tld/*tbm=isch*
-// @compatible      firefox Tested on Firefox v97 with Violentmonkey v2.13.0, Tampermonkey v4.13 and Greasemonkey v4.11
-// @compatible      chrome Tested on Chrome v98 with Violentmonkey v2.13.0 and Tampermonkey v4.14
+// @compatible      firefox Tested on Firefox v99 with Violentmonkey v2.13.0, Tampermonkey v4.16 and Greasemonkey v4.11
+// @compatible      chrome Tested on Chrome v100 with Violentmonkey v2.13.0 and Tampermonkey v4.16
 // ==/UserScript==
