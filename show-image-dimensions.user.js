@@ -15,22 +15,25 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.3.4
+// @version         1.4.0
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
-// @updateURL       https://greasyfork.org/scripts/401432/code/google-image-search-show-image-dimensions.meta.js
-// @downloadURL     https://greasyfork.org/scripts/401432/code/google-image-search-show-image-dimensions.user.js
 // @icon            https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon.png
-// @icon64          https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon64.png
 // @inject-into     content
 // @include         https://*.google.tld/*tbm=isch*
-// @compatible      firefox Tested on Firefox v99 with Violentmonkey v2.13.0, Tampermonkey v4.16 and Greasemonkey v4.11
-// @compatible      chrome Tested on Chrome v100 with Violentmonkey v2.13.0 and Tampermonkey v4.16
+// @include         https://*.google.tld/*udm=2*
+// @compatible      firefox Tested on Firefox v124 with Violentmonkey v2.18.0, Tampermonkey v5.1.0 and Greasemonkey v4.12.0
+// @compatible      chrome Tested on Chrome v123 with Violentmonkey v2.18.0 and Tampermonkey v5.1.0
+// @downloadURL     https://update.greasyfork.org/scripts/401432/Google%20Image%20Search%20-%20Show%20Image%20Dimensions.user.js
+// @updateURL       https://update.greasyfork.org/scripts/401432/Google%20Image%20Search%20-%20Show%20Image%20Dimensions.meta.js
 // ==/UserScript==
 
 (function () {
   'use strict';
+
+  const isNewUi = (new URL(location.href).searchParams.get('udm') === '2') && !(new URL(location.href).searchParams.get('tbm'));
+  const DELAY_TIME = 500;
 
   // Add Google's own CSS used for image dimensions
   addGlobalStyle(`
@@ -41,37 +44,69 @@
       margin: 0;
       padding: 4px;
       color: #f1f3f4;
-      background-color: rgba(0,0,0,.5);
-      border-radius: 2px 0 0 0;
+      background-color: rgba(0,0,0,.6);
+      border-radius: 2px 0 ${isNewUi ? `12px` : `0`} 0;
       font-family: Roboto-Medium,Roboto,Arial,sans-serif;
       font-size: 10px;
       line-height: 12px;
     }
-    `);
+  `);
 
   function showDims() {
+
     // Find all thumbnails & exclude the "already handled" class we set below
-    const images = document.querySelectorAll('[data-ow]:not(.img-dims):not([data-ismultirow])');
+    const thumbnails = document.querySelectorAll(
+      isNewUi ? 'div[data-attrid="images universal"]:not(.img-dims)' : '[data-ow]:not(.img-dims):not([data-ismultirow])'
+    );
 
     // Loop through all thumbnails
-    images.forEach((image) => {
+    thumbnails.forEach((thumbnail) => {
       try {
-        // Get original width from 'data-ow' attribute
-        const width = image.getAttribute('data-ow');
+        if (isNewUi) {
 
-        // Get original height from 'data-oh' attribute
-        const height = image.getAttribute('data-oh');
+          // Dispatch a mouseover event for every thumbnail to generate the href attribute
+          const dimensionsTrigger = thumbnail.querySelector('h3>a:not([href])>div');
+          if (!dimensionsTrigger) return;
+          dimensionsTrigger.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
 
-        // Create p tag and insert text
-        const dimensionsDiv = document.createElement('p');
-        const dimensionsContent = document.createTextNode(width + ' × ' + height);
-        dimensionsDiv.appendChild(dimensionsContent);
+          setTimeout(() => {
 
-        // Append everything to thumbnail
-        image.children[1].appendChild(dimensionsDiv);
+            // Check if link element received its href attribute
+            const linkElement = dimensionsTrigger.parentElement;
+            if (linkElement?.href) {
 
-        // Add CSS class to the thumbnail
-        image.classList.add('img-dims');
+              // Add CSS class to the thumbnail
+              thumbnail.classList.add('img-dims');
+
+              // Extract width and height from url parameters using destructuring
+              const [, width, height] = /&w=(\d+)&h=(\d+)/.exec(linkElement.href) || [];
+
+              // Create p tag and insert text
+              const dimensionsElement = document.createElement('p');
+              dimensionsElement.textContent = `${width} × ${height}`;
+
+              // Append everything to thumbnail
+              linkElement.appendChild(dimensionsElement);
+            }
+          }, DELAY_TIME);
+        } else {
+
+          // Get original width from 'data-ow' attribute
+          const width = thumbnail.getAttribute('data-ow');
+
+          // Get original height from 'data-oh' attribute
+          const height = thumbnail.getAttribute('data-oh');
+
+          // Create p tag and insert text
+          const dimensionsElement = document.createElement('p');
+          dimensionsElement.textContent = `${width} × ${height}`;
+
+          // Append everything to thumbnail
+          thumbnail.children[1].appendChild(dimensionsElement);
+
+          // Add CSS class to the thumbnail
+          thumbnail.classList.add('img-dims');
+        }
 
       } catch (error) {
         console.error(error);
@@ -86,14 +121,14 @@
   const mutationObserver = new MutationObserver(showDims);
 
   // Let MutationObserver target the grid containing all thumbnails
-  const targetNode = document.querySelector('div[data-cid="GRID_STATE0"]');
+  const targetNode = document.querySelector(isNewUi ? 'div#rso' : 'div[data-cid="GRID_STATE0"]');
 
   // Run MutationObserver
   mutationObserver.observe(targetNode, { childList: true, subtree: true });
 
   function addGlobalStyle(css) {
-    const head = document.getElementsByTagName('head')[0];
-    if (!head) { return; }
+    const head = document.querySelector('head');
+    if (!head) return;
     const style = document.createElement('style');
     style.textContent = css;
     head.appendChild(style);
