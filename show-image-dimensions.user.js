@@ -15,16 +15,18 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.4.0
+// @version         1.5.0
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
 // @icon            https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon.png
-// @inject-into     content
+// @grant           unsafeWindow
 // @include         https://*.google.tld/*tbm=isch*
 // @include         https://*.google.tld/*udm=2*
-// @compatible      firefox Tested on Firefox v124 with Violentmonkey v2.18.0, Tampermonkey v5.1.0 and Greasemonkey v4.12.0
-// @compatible      chrome Tested on Chrome v123 with Violentmonkey v2.18.0 and Tampermonkey v5.1.0
+// @compatible      firefox Tested on Firefox v146 with Violentmonkey v2.31.0, Tampermonkey v5.4.1 and Greasemonkey v4.13.0
+// @compatible      chrome Tested on Chrome v143 with Violentmonkey v2.31.0 and Tampermonkey v5.4.1
+// @compatible      edge Tested on Edge v143 with Violentmonkey v2.31.0 and Tampermonkey v5.4.0
+// @compatible      opera Tested on Opera v125 with Tampermonkey v5.3.6222
 // @downloadURL     https://update.greasyfork.org/scripts/401432/Google%20Image%20Search%20-%20Show%20Image%20Dimensions.user.js
 // @updateURL       https://update.greasyfork.org/scripts/401432/Google%20Image%20Search%20-%20Show%20Image%20Dimensions.meta.js
 // ==/UserScript==
@@ -32,86 +34,77 @@
 (function () {
   'use strict';
 
-  const isNewUi = (new URL(location.href).searchParams.get('udm') === '2') && !(new URL(location.href).searchParams.get('tbm'));
   const DELAY_TIME = 500;
 
-  // Add Google's own CSS used for image dimensions
-  addGlobalStyle(`
-    .img-dims p {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      margin: 0;
-      padding: 4px;
-      color: #f1f3f4;
-      background-color: rgba(0,0,0,.6);
-      border-radius: 2px 0 ${isNewUi ? `12px` : `0`} 0;
-      font-family: Roboto-Medium,Roboto,Arial,sans-serif;
-      font-size: 10px;
-      line-height: 12px;
-    }
-  `);
-
   function showDims() {
+    setTimeout(() => {
+      // Find all results & exclude the "already handled" class we set below
+      const results = document.querySelectorAll('div[data-attrid="images universal"]:not(.img-dims)');
 
-    // Find all thumbnails & exclude the "already handled" class we set below
-    const thumbnails = document.querySelectorAll(
-      isNewUi ? 'div[data-attrid="images universal"]:not(.img-dims)' : '[data-ow]:not(.img-dims):not([data-ismultirow])'
-    );
+      // Loop through all results
+      results.forEach((result) => {
+        try {
+          // Get result ID from jsdata attribute
+          const jsdata = result.getAttribute('jsdata');
+          const resultId = jsdata.split(';')[2];
 
-    // Loop through all thumbnails
-    thumbnails.forEach((thumbnail) => {
-      try {
-        if (isNewUi) {
+          // Access "W_jd" in window object
+          const W_jd = unsafeWindow.W_jd;
+          const rawResultData = W_jd[resultId];
+          const symbols = Object.getOwnPropertySymbols(rawResultData);
 
-          // Dispatch a mouseover event for every thumbnail to generate the href attribute
-          const dimensionsTrigger = thumbnail.querySelector('h3>a:not([href])>div');
-          if (!dimensionsTrigger) return;
-          dimensionsTrigger.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+          // Traverse down to the data we want
+          const level0 = rawResultData[symbols[0]];
+          if (!level0) return;
+          const level1 = Object.values(level0)[0]?.[1];
+          if (!level1) return;
+          const level2 = Object.values(level1)[0]?.[3];
+          if (!level2) return;
 
-          setTimeout(() => {
+          // Extract full res URL, width and height. Abort if not found
+          const [imgurl, height, width] = level2;
+          if (!width || !height || !imgurl) return;
 
-            // Check if link element received its href attribute
-            const linkElement = dimensionsTrigger.parentElement;
-            if (linkElement?.href) {
+          // Filter out Meta sites & TikTok which prevent direct full res linking. It's brainrot anyways
+          const hn = (new URL(imgurl)).hostname;
+          const goodUrl = !hn.startsWith('lookaside') && !hn.startsWith('www.tiktok.com');
 
-              // Add CSS class to the thumbnail
-              thumbnail.classList.add('img-dims');
+          // Create svg icon for full res lightbox
+          const icon = createSVG('svg', { viewBox: '0 0 24 24', width: '16', height: '16' }, [
+            createSVG('path', { d: 'M19 21H5l-2-2V5l2-2h7v2H5v14h14v-7h2v7l-2 2z' }),
+            createSVG('path', { d: 'M21 10h-2V5h-5V3h7z' }),
+            createSVG('path', { d: 'M8 14 19 3l2 2-11 11z' })
+          ]);
 
-              // Extract width and height from url parameters using destructuring
-              const [, width, height] = /&w=(\d+)&h=(\d+)/.exec(linkElement.href) || [];
+          // Create element for dimensions text
+          const dimensionsElement = document.createElement(goodUrl ? 'a' : 'p');
+          dimensionsElement.textContent = '';
+          if (goodUrl) dimensionsElement.append(icon);
+          dimensionsElement.append(`${width} × ${height}`);
+          dimensionsElement.classList.add('dims');
 
-              // Create p tag and insert text
-              const dimensionsElement = document.createElement('p');
-              dimensionsElement.textContent = `${width} × ${height}`;
+          // Create full res link
+          if (goodUrl) {
+            dimensionsElement.href = imgurl;
+            dimensionsElement.onclick = (e) => {
+              if (!isKeyPressed) {
+                e.preventDefault();
+                showLightbox(imgurl);
+              }
+            };
+          }
 
-              // Append everything to thumbnail
-              linkElement.appendChild(dimensionsElement);
-            }
-          }, DELAY_TIME);
-        } else {
+          // Append everything to the thumbnail
+          const thumbnail = result.querySelector('h3');
+          thumbnail.append(dimensionsElement);
 
-          // Get original width from 'data-ow' attribute
-          const width = thumbnail.getAttribute('data-ow');
-
-          // Get original height from 'data-oh' attribute
-          const height = thumbnail.getAttribute('data-oh');
-
-          // Create p tag and insert text
-          const dimensionsElement = document.createElement('p');
-          dimensionsElement.textContent = `${width} × ${height}`;
-
-          // Append everything to thumbnail
-          thumbnail.children[1].appendChild(dimensionsElement);
-
-          // Add CSS class to the thumbnail
-          thumbnail.classList.add('img-dims');
+          // Add CSS class to result
+          result.classList.add('img-dims');
+        } catch (error) {
+          console.warn('Show Image Dimensions UserScript:', error);
         }
-
-      } catch (error) {
-        console.error(error);
-      }
-    });
+      });
+    }, DELAY_TIME);
   }
 
   // Run script once on document ready
@@ -120,17 +113,144 @@
   // Initialize new MutationObserver
   const mutationObserver = new MutationObserver(showDims);
 
-  // Let MutationObserver target the grid containing all thumbnails
-  const targetNode = document.querySelector(isNewUi ? 'div#rso' : 'div[data-cid="GRID_STATE0"]');
+  // Let MutationObserver target the grid containing all results
+  const targetNode = document.querySelector('div#rso');
 
   // Run MutationObserver
   mutationObserver.observe(targetNode, { childList: true, subtree: true });
 
-  function addGlobalStyle(css) {
-    const head = document.querySelector('head');
-    if (!head) return;
+  // Create lightbox for full res images
+  const lightboxBackdrop = document.createElement('div');
+  lightboxBackdrop.classList.add('img-backdrop');
+  const lightboxWrap = document.createElement('div');
+  lightboxWrap.classList.add('img-wrap');
+  const lightboxImg = document.createElement('img');
+  lightboxWrap.append(lightboxImg);
+  lightboxBackdrop.append(lightboxWrap);
+  document.body.append(lightboxBackdrop);
+
+  let isKeyPressed = false;
+  document.addEventListener('keydown', () => isKeyPressed = true);
+  document.addEventListener('keyup', () => isKeyPressed = false);
+
+  // Show full res image
+  const showLightbox = imgurl => {
+    lightboxBackdrop.classList.add('show');
+    lightboxImg.src = imgurl;
+    lightboxImg.onload = () => {
+      lightboxWrap.classList.add('show');
+    }
+    lightboxBackdrop.onclick = (e) => {
+      hideLightbox(e);
+    };
+    lightboxImg.onclick = (e) => {
+      window.open(imgurl, '_blank');
+    };
+    document.addEventListener('keydown', closeOnEsc);
+  }
+
+  // Hide full res image
+  const hideLightbox = () => {
+    lightboxBackdrop.classList.remove('show');
+    lightboxWrap.classList.remove('show');
+    lightboxImg.removeAttribute('src');
+    delete lightboxImg.dataset.ilt;
+    document.removeEventListener('keydown', closeOnEsc);
+  }
+
+  const closeOnEsc = (e) => {
+    if (e.key === 'Escape') hideLightbox(e);
+  };
+
+  // Helper function to generate small svg icon
+  const createSVG = (type, attrs = {}, children = []) => {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', type);
+    for (const [key, value] of Object.entries(attrs)) {
+      el.setAttribute(key, value);
+    }
+    if (children.length > 0) el.append(...children);
+    return el;
+  }
+
+  // Add CSS function
+  const addStyles = css => {
     const style = document.createElement('style');
     style.textContent = css;
-    head.appendChild(style);
+    document.head.appendChild(style);
   }
+
+  // Styles for dimensions and full res lightbox
+  addStyles(`
+    .img-dims .dims {
+      display: flex;
+      gap: 3px;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+      padding: 4px;
+      color: #f1f3f4;
+      background-color: rgba(0, 0, 0, 0.6);
+      border-radius: 2px 0 12px 0;
+      font-family: Roboto-Medium, Roboto, Arial, sans-serif;
+      font-size: 10px;
+      line-height: 12px;
+      text-decoration: none;
+    }
+    .img-dims .dims svg {
+      fill: #f1f3f4;
+      height: 12px;
+      width: 12px;
+      opacity: 0.4;
+    }
+    .img-dims .dims:hover svg {
+      opacity: 1;
+    }
+    .img-backdrop {
+      position: fixed;
+      display: flex;
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.2s ease-in-out;
+      top: 0;
+      left: 0;
+      z-index: 1010;
+      justify-content: center;
+      align-items: center;
+    }
+    .img-backdrop.show {
+      pointer-events: all;
+      bottom: 0;
+      right: 0;
+      opacity: 1;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    .img-backdrop.show .img-wrap {
+      z-index: 1011;
+      border-radius: 12px;
+      cursor: pointer;
+      display: block;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease-in-out;
+      background-color: rgba(255, 255, 255, 0.33);
+      box-shadow: inset 0px 0px 50px 10px rgba(0, 0, 0, 0.66);
+    }
+    .img-backdrop.show .img-wrap img {
+      position: relative;
+      display: block;
+      z-index: 1012;
+      max-width: 95vw;
+      max-height: 95vh;
+      opacity: 0;
+      transition: all 0.2s ease-in-out;
+    }
+    .img-backdrop.show .img-wrap.show {
+      background-color: #fff;
+      box-shadow: 0px 0px 100px 20px rgba(0, 0, 0, 0.66);
+    }
+    .img-backdrop.show .img-wrap.show img {
+      opacity: 1;
+    }
+  `);
 })();
