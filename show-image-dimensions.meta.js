@@ -15,7 +15,7 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.7.0
+// @version         1.7.1
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues

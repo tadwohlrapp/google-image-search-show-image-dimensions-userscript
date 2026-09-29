@@ -15,7 +15,7 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.7.0
+// @version         1.7.1
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
@@ -72,7 +72,7 @@
       try {
         // Get result ID from jsdata attribute
         const jsdata = result.getAttribute('jsdata') ?? result.querySelector('[jsdata]')?.getAttribute('jsdata');
-        const resultId = jsdata?.split(';')[2];
+        const resultId = jsdata?.split(';')[2]?.split(' ')[0];
         if (!resultId) return;
 
         // Access "W_jd" in window object
@@ -94,16 +94,23 @@
         }
         if (!Array.isArray(rawResultData)) return;
 
-        // Extract level 1. If it happens to be wrapped, unwrap it just in case.
-        let level1 = rawResultData[1];
-        if (level1 && !Array.isArray(level1)) {
-          const unwrap = (obj) => Object.values(obj).find(Array.isArray);
-          level1 = unwrap(level1);
-        }
-        if (!level1 || !Array.isArray(level1[3])) return;
+        let level1, level2;
 
-        // Extract level 2
-        const level2 = level1[3];
+        if (isLens()) {
+          // Lens result object only has one level
+          level2 = rawResultData[3];
+        } else {
+          // Extract level 1. If it happens to be wrapped, unwrap it just in case.
+          level1 = rawResultData[1];
+          if (level1 && !Array.isArray(level1)) {
+            const unwrap = (obj) => Object.values(obj).find(Array.isArray);
+            level1 = unwrap(level1);
+          }
+          if (!level1 || !Array.isArray(level1[3])) return;
+
+          // Extract level 2
+          level2 = level1[3];
+        }
 
         // Extract full res URL, width and height
         const [imgurl, height, width] = level2;
