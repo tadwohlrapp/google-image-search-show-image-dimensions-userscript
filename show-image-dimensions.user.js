@@ -15,7 +15,7 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.6.0
+// @version         1.7.0
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
@@ -77,16 +77,33 @@
 
         // Access "W_jd" in window object
         const W_jd = unsafeWindow.W_jd;
-        const rawResultData = W_jd[resultId];
-        const symbols = Object.getOwnPropertySymbols(rawResultData);
+        let rawResultData = W_jd[resultId];
+        if (!rawResultData) return;
 
-        // Traverse down to the data we want
-        const level0 = rawResultData[symbols[0]];
-        if (!level0) return;
-        const level1 = Object.values(level0)[0]?.[1];
-        if (!level1) return;
-        const level2 = Object.values(level1)[0]?.[3];
-        if (!level2) return;
+        // If rawResultData is a wrapper object, unwrap it
+        if (!Array.isArray(rawResultData)) {
+          const symbols = Object.getOwnPropertySymbols(rawResultData);
+          const dataSym = symbols.find(sym => {
+            const val = rawResultData[sym];
+            return val && typeof val === 'object' && Object.values(val).some(Array.isArray);
+          });
+
+          if (!dataSym) return;
+          const unwrap = (obj) => Object.values(obj).find(Array.isArray);
+          rawResultData = unwrap(rawResultData[dataSym]);
+        }
+        if (!Array.isArray(rawResultData)) return;
+
+        // Extract level 1. If it happens to be wrapped, unwrap it just in case.
+        let level1 = rawResultData[1];
+        if (level1 && !Array.isArray(level1)) {
+          const unwrap = (obj) => Object.values(obj).find(Array.isArray);
+          level1 = unwrap(level1);
+        }
+        if (!level1 || !Array.isArray(level1[3])) return;
+
+        // Extract level 2
+        const level2 = level1[3];
 
         // Extract full res URL, width and height
         const [imgurl, height, width] = level2;
@@ -122,7 +139,7 @@
         };
 
         // Append everything to the thumbnail
-        const thumbnail = isLens() ? result.querySelector('img').closest('[jsdata]').parentElement : result.querySelector('h3');
+        const thumbnail = result.querySelector('img').closest('[jsdata]').parentElement;
         thumbnail.style.position = 'relative';
         thumbnail.append(dimensionsElement);
 
@@ -133,23 +150,6 @@
       };
     });
   };
-
-  // Run script on document ready
-  handleUrlChange();
-
-  // Run script when title changes
-  const titleObserver = new MutationObserver(() => {
-    handleUrlChange();
-  });
-
-  // Run script with minimal delay when grid changes
-  const contentObserver = new MutationObserver(() => {
-    setTimeout(() => { showDims() }, 100);
-  });
-
-  // Run MutationObservers
-  titleObserver.observe(document.querySelector('title'), { subtree: true, characterData: true, childList: true });
-  contentObserver.observe(document.querySelector('div#rso'), { childList: true, subtree: true });
 
   // Create lightbox for full res images
   const lightboxBackdrop = document.createElement('div');
@@ -286,4 +286,23 @@
       opacity: 1;
     }
   `);
+
+
+  // Run script on document ready
+  handleUrlChange();
+
+  // Run script when title changes
+  const titleObserver = new MutationObserver(() => {
+    handleUrlChange();
+  });
+
+  // Run script with minimal delay when grid changes
+  const contentObserver = new MutationObserver(() => {
+    setTimeout(() => { showDims() }, 100);
+  });
+
+  // Run MutationObservers
+  titleObserver.observe(document.querySelector('title'), { subtree: true, characterData: true, childList: true });
+  contentObserver.observe(document.querySelector('div#rso'), { childList: true, subtree: true });
+
 })();

@@ -15,16 +15,18 @@
 // @description:ru  Отображает размеры изображения (например, "1920 × 1080") для каждой миниатюры на странице результатов поиска изображений Google.
 // @namespace       https://github.com/tadwohlrapp
 // @author          Tad Wohlrapp
-// @version         1.4.0
+// @version         1.7.0
 // @license         MIT
 // @homepageURL     https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript
 // @supportURL      https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/issues
 // @icon            https://github.com/tadwohlrapp/google-image-search-show-image-dimensions-userscript/raw/main/icon.png
-// @inject-into     content
-// @include         https://*.google.tld/*tbm=isch*
+// @grant           unsafeWindow
 // @include         https://*.google.tld/*udm=2*
-// @compatible      firefox Tested on Firefox v124 with Violentmonkey v2.18.0, Tampermonkey v5.1.0 and Greasemonkey v4.12.0
-// @compatible      chrome Tested on Chrome v123 with Violentmonkey v2.18.0 and Tampermonkey v5.1.0
+// @include         https://*.google.tld/*lns_surface=*
+// @compatible      firefox Tested on Firefox v146 with Violentmonkey v2.31.0, Tampermonkey v5.4.1 and Greasemonkey v4.13.0
+// @compatible      chrome Tested on Chrome v143 with Violentmonkey v2.31.0 and Tampermonkey v5.4.1
+// @compatible      edge Tested on Edge v143 with Violentmonkey v2.31.0 and Tampermonkey v5.4.0
+// @compatible      opera Tested on Opera v125 with Tampermonkey v5.3.6222
 // @downloadURL     https://update.greasyfork.org/scripts/401432/Google%20Image%20Search%20-%20Show%20Image%20Dimensions.user.js
 // @updateURL       https://update.greasyfork.org/scripts/401432/Google%20Image%20Search%20-%20Show%20Image%20Dimensions.meta.js
 // ==/UserScript==
